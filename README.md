@@ -114,8 +114,9 @@ bash openandriod/tools/build-apk.sh openandriod
 Обычный Gradle-проект (AGP 7.4.2, `android.useAndroidX=false`, зависимостей нет).
 Пакет объявлен в `AndroidManifest.xml` — как любят aapt-сборки.
 
-> После первого CI-прогона готовый APK появится в [`apk/`](apk/) — можно просто скачать и поставить.
-> А пока — самый быстрый путь: **вариант А**, три команды в Termux.
+> ✅ **Готовый APK уже собран CI и лежит в [`apk/PixelCode.apk`](apk/PixelCode.apk)** — можно просто
+> скачать и поставить на телефон (лог сборки: `apk/build.log`).
+> Обновляется автоматически при каждом пуше.
 
 ---
 
