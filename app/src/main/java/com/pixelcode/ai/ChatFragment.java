@@ -324,9 +324,6 @@ public class ChatFragment extends Fragment {
             role.setTextColor(user ? Ui.C_ACCENT : Ui.C_DIM);
             text.setText(m.content.length() == 0 ? "…" : m.content);
             bubble.setBackgroundResource(user ? R.drawable.bg_bubble_user : R.drawable.bg_bubble_ai);
-            LinearLayout.LayoutParams lp = (LinearLayout.LayoutParams) bubble.getLayoutParams();
-            lp.width = LinearLayout.LayoutParams.MATCH_PARENT;
-            bubble.setLayoutParams(lp);
             Ui.applyAll(v);
             text.setTypeface(Ui.pixel);
             return v;
