@@ -1,5 +1,5 @@
 [pixelcode] === Сборка APK: /home/runner/work/openandriod/openandriod ===
-Wed Sep  2 23:35:14 UTC 2026
+Wed Sep  2 23:43:57 UTC 2026
 [pixelcode] манифест: /home/runner/work/openandriod/openandriod/app/src/main/AndroidManifest.xml
 [pixelcode] ресурсы:  /home/runner/work/openandriod/openandriod/app/src/main/res
 [pixelcode] исходники: /home/runner/work/openandriod/openandriod/app/src/main/java
@@ -13,4 +13,4 @@ Note: Recompile with -Xlint:deprecation for details.
 [pixelcode] подпись…
 [pixelcode] ГОТОВО: /home/runner/work/openandriod/openandriod/build/app.apk (224K)
 [pixelcode] установка: pm install -r /home/runner/work/openandriod/openandriod/build/app.apk
-Wed Sep  2 23:35:19 UTC 2026
+Wed Sep  2 23:44:04 UTC 2026
