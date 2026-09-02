@@ -1,0 +1,9 @@
+[pixelcode] === Сборка APK: /home/runner/work/openandriod/openandriod ===
+Wed Sep  2 23:05:42 UTC 2026
+[pixelcode] манифест: /home/runner/work/openandriod/openandriod/app/src/main/AndroidManifest.xml
+[pixelcode] ресурсы:  /home/runner/work/openandriod/openandriod/app/src/main/res
+[pixelcode] исходники: /home/runner/work/openandriod/openandriod/app/src/main/java
+[pixelcode] упаковка ресурсов (aapt2)…
+/home/runner/work/openandriod/openandriod/app/src/main/res: error: failed to read file: failed to read magic from input: Is a directory.
+error: failed parsing input.
+[pixelcode] ОШИБКА: aapt2 link не удался (см. лог выше)
