@@ -120,8 +120,13 @@ mkdir -p "$WORK/gen" "$WORK/classes"
 # ---------- 3. Ресурсы: aapt2 или aapt ----------
 if [ -n "$AAPT2_BIN" ]; then
   say "упаковка ресурсов (aapt2)…"
+  if [ -n "$RES" ]; then
+    "$AAPT2_BIN" compile --dir "$RES" -o "$WORK/res.zip" || die "aapt2 compile не удался"
+  else
+    : > "$WORK/res.zip"
+  fi
   A2_ARGS=(link -o "$WORK/base.apk" -I "$ANDROID_JAR" --manifest "$MANIFEST" --java "$WORK/gen" --auto-add-overlay)
-  [ -n "$RES" ] && A2_ARGS+=("$RES")
+  [ -s "$WORK/res.zip" ] && A2_ARGS+=("$WORK/res.zip")
   [ -n "$ASSETS" ] && A2_ARGS+=(-A "$ASSETS")
   "$AAPT2_BIN" "${A2_ARGS[@]}" || die "aapt2 link не удался (см. лог выше)"
 else
