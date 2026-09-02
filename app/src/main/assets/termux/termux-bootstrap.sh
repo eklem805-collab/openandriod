@@ -16,17 +16,20 @@ say "обновление списков пакетов…"
 pkg update -y || apt update -y || true
 pkg upgrade -y || true
 
-say "установка инструментов (aapt, apksigner, zipalign, java, ecj, dx, zip)…"
+say "установка инструментов (java, aapt, apksigner, zip)…"
 # openjdk-17 нужен для javac/keytool; ecj и dx — запасные компилятор/дексер
 ok=0
 for set in \
-  "openjdk-17 aapt apksigner zipalign zip" \
-  "aapt apksigner zipalign zip ecj dx openjdk-17" \
-  "aapt apksigner zipalign zip ecj" ; do
+  "openjdk-17 aapt apksigner zip" \
+  "aapt apksigner zip ecj openjdk-17" \
+  "aapt apksigner zip ecj dx" ; do
   say "  пробую: pkg install $set"
   if pkg install -y $set; then ok=1; break; fi
 done
 [ $ok -eq 1 ] || { say "ОШИБКА: не удалось установить пакеты"; exit 1; }
+command -v zipalign >/dev/null 2>&1 || pkg install -y zipalign || true
+command -v d8 >/dev/null 2>&1 || pkg install -y d8 || true
+command -v dx  >/dev/null 2>&1 || pkg install -y dx  || true
 
 say "скачиваю android.jar (API 34) — это нужно один раз (~26 МБ)…"
 if [ ! -f "$CACHE/android.jar" ]; then

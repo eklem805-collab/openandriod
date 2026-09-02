@@ -106,14 +106,16 @@ bash openandriod/tools/build-apk.sh openandriod
 ```
 
 ### Вариант Б — GitHub Actions (кнопкой)
-Вкладка **Actions → build-apk → Run workflow** — CI собирает APK ровно тем же скриптом и
-кладёт его в `apk/PixelCode.apk` (плюс артефакт во вкладке Artifacts).
+Если в репозитории включены Actions (Settings → Actions → General → Allow all actions),
+воркфлоу `build-apk` собирает APK ровно тем же скриптом при каждом пуше или кнопкой
+**Run workflow** и кладёт его в `apk/PixelCode.apk` (плюс артефакт во вкладке Artifacts).
 
 ### Вариант В — Android Studio
 Обычный Gradle-проект (AGP 7.4.2, `android.useAndroidX=false`, зависимостей нет).
 Пакет объявлен в `AndroidManifest.xml` — как любят aapt-сборки.
 
-> Готовый собранный APK лежит в [`apk/PixelCode.apk`](apk/PixelCode.apk) — можно просто скачать и поставить.
+> После первого CI-прогона готовый APK появится в [`apk/`](apk/) — можно просто скачать и поставить.
+> А пока — самый быстрый путь: **вариант А**, три команды в Termux.
 
 ---
 

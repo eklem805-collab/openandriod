@@ -80,7 +80,7 @@ AAPT_BIN="$(command -v aapt || true)"
 D8_BIN="$(command -v d8 || true)"
 DX_BIN="$(command -v dx || true)"
 ZIPALIGN_BIN="$(command -v zipalign || true)"
-[ -z "$ZIPALIGN_BIN" ] && die "нет zipalign. Выполни: pkg install aapt (zipalign входит)"
+[ -z "$ZIPALIGN_BIN" ] && say "ПРЕДУПРЕЖДЕНИЕ: zipalign не найден — APK будет без выравнивания (на установку не влияет)"
 command -v apksigner >/dev/null 2>&1 || die "нет apksigner. Выполни: pkg install apksigner"
 command -v keytool   >/dev/null 2>&1 || die "нет keytool. Выполни: pkg install openjdk-17"
 command -v zip       >/dev/null 2>&1 || die "нет zip. Выполни: pkg install zip"
@@ -168,7 +168,11 @@ say "сборка apk…"
 cp "$WORK/base.apk" "$WORK/unsigned.apk"
 (cd "$WORK" && zip -q unsigned.apk classes.dex) || die "не удалось добавить classes.dex"
 
-"$ZIPALIGN_BIN" -f 4 "$WORK/unsigned.apk" "$WORK/aligned.apk" || die "zipalign не удался"
+if [ -n "$ZIPALIGN_BIN" ]; then
+  "$ZIPALIGN_BIN" -f 4 "$WORK/unsigned.apk" "$WORK/aligned.apk" || die "zipalign не удался"
+else
+  cp "$WORK/unsigned.apk" "$WORK/aligned.apk"
+fi
 
 # ---------- 7. Подпись ----------
 KS="$CACHE/debug.keystore"

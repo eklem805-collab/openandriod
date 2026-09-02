@@ -4,12 +4,15 @@ name: build-apk
 # Запуск: вкладка Actions -> build-apk -> Run workflow, либо: gh workflow run build-apk.yml
 on:
   workflow_dispatch:
+  push:
+    branches: ['**']
 
 permissions:
   contents: write
 
 jobs:
   build:
+    if: ${{ !contains(github.event.head_commit.message, '[ci skip]') }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
