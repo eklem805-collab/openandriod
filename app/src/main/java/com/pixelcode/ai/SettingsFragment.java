@@ -103,22 +103,12 @@ public class SettingsFragment extends Fragment implements TextWatcher {
         });
         btnFiles.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                try {
-                    startActivity(new Intent("android.settings.MANAGE_APP_ALL_FILES_ACCESS_PERMISSION",
-                            android.net.Uri.parse("package:" + activity.getPackageName())));
-                } catch (Throwable t) {
-                    Ui.toast(activity, "Открой настройки приложения вручную (Android 11+)");
-                }
+                Ui.openAllFilesSettings(activity);
             }
         });
         btnInstall.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                try {
-                    startActivity(new Intent("android.settings.MANAGE_UNKNOWN_APP_SOURCES",
-                            android.net.Uri.parse("package:" + activity.getPackageName())));
-                } catch (Throwable t) {
-                    Ui.toast(activity, "Открой настройки приложения вручную");
-                }
+                Ui.openInstallSettings(activity);
             }
         });
         btnBootstrap.setOnClickListener(new View.OnClickListener() {

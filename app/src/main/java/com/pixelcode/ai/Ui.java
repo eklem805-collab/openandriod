@@ -1,7 +1,10 @@
 package com.pixelcode.ai;
 
+import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Typeface;
+import android.net.Uri;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
@@ -56,5 +59,49 @@ public final class Ui {
     public static int dp(Context ctx, float v) {
         float d = ctx.getResources().getDisplayMetrics().density;
         return (int) (v * d + 0.5f);
+    }
+
+    // --------------------------------------------- ссылки на системные настройки
+
+    /** Надёжное открытие «Доступ ко всем файлам» для этого приложения. */
+    public static boolean openAllFilesSettings(Activity a) {
+        // 1) персональная страница «Все файлы» для приложения
+        try {
+            a.startActivity(new Intent("android.settings.MANAGE_APP_ALL_FILES_ACCESS_PERMISSION",
+                    Uri.parse("package:" + a.getPackageName())));
+            return true;
+        } catch (Throwable ignored) {
+        }
+        // 2) общий список приложений с переключателем «Все файлы»
+        try {
+            a.startActivity(new Intent("android.settings.MANAGE_APP_ALL_FILES_ACCESS_PERMISSION"));
+            return true;
+        } catch (Throwable ignored) {
+        }
+        // 3) всегда работающий вариант — страница приложения в настройках
+        return openAppDetails(a);
+    }
+
+    /** Надёжное открытие «Установка неизвестных приложений» для этого приложения. */
+    public static boolean openInstallSettings(Activity a) {
+        try {
+            a.startActivity(new Intent("android.settings.MANAGE_UNKNOWN_APP_SOURCES",
+                    Uri.parse("package:" + a.getPackageName())));
+            return true;
+        } catch (Throwable ignored) {
+        }
+        return openAppDetails(a);
+    }
+
+    /** Страница «О приложении» в системных настройках (работает на любом Android). */
+    public static boolean openAppDetails(Activity a) {
+        try {
+            a.startActivity(new Intent("android.settings.APPLICATION_DETAILS_SETTINGS",
+                    Uri.parse("package:" + a.getPackageName())));
+            return true;
+        } catch (Throwable t) {
+            toast(a, "Не удалось открыть настройки — открой «О приложении» вручную");
+            return false;
+        }
     }
 }

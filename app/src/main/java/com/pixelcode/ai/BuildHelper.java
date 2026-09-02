@@ -69,6 +69,21 @@ public final class BuildHelper {
 
     /** Отправляет скрипт в Termux (нужны permission + allow-external-apps). */
     public static void runInTermux(Context ctx, String scriptPath, String args, String workdir) {
+        // Разрешение RUN_COMMAND запрашиваем только здесь, в момент сборки —
+        // не на старте приложения (каскад системных диалогов ломал ввод).
+        if (android.os.Build.VERSION.SDK_INT >= 23
+                && ctx.checkSelfPermission("com.termux.permission.RUN_COMMAND")
+                != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            Ui.toast(ctx, "Выдай разрешение «отправлять команды в Termux» и нажми кнопку снова");
+            if (ctx instanceof Activity) {
+                try {
+                    ((Activity) ctx).requestPermissions(
+                            new String[]{"com.termux.permission.RUN_COMMAND"}, 7);
+                } catch (Throwable ignored) {
+                }
+            }
+            return;
+        }
         Intent it = new Intent(RUN_CMD_ACTION);
         it.setClassName(TERMUX_PKG, TERMUX_SERVICE);
         it.putExtra("com.termux.RUN_COMMAND_PATH", TERMUX_BASH);
@@ -252,12 +267,7 @@ public final class BuildHelper {
                             + "(Настройки → Приложения → PixelCode) и повтори.")
                     .setPositiveButton("Открыть настройку", new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int which) {
-                            try {
-                                activity.startActivity(new Intent(
-                                        "android.settings.MANAGE_UNKNOWN_APP_SOURCES",
-                                        android.net.Uri.parse("package:" + activity.getPackageName())));
-                            } catch (Throwable ignored) {
-                            }
+                            Ui.openInstallSettings(activity);
                         }
                     })
                     .setNegativeButton("Отмена", null)

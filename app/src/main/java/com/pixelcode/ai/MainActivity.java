@@ -1,14 +1,9 @@
 package com.pixelcode.ai;
 
-import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Fragment;
 import android.content.DialogInterface;
-import android.content.Intent;
-import android.content.pm.PackageManager;
-import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
@@ -30,6 +25,7 @@ public class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        CrashLog.install(this);
         Ui.init(this);
         setContentView(R.layout.activity_main);
         Ui.applyAll(findViewById(android.R.id.content));
@@ -66,12 +62,39 @@ public class MainActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
-        checkPermissions();
+        // Единственный диалог первого запуска. Никаких системных requestPermissions
+        // на старте — они вызывают каскад окон, который на некоторых прошивках
+        // ломает ввод (кнопки перестают реагировать).
         Prefs p = new Prefs(this);
         if (!p.onboarded()) {
             p.setOnboarded();
-            showOnboarding();
+            showWelcome();
         }
+        // если фрагменты потерялись (после краша процесса и т.п.) — восстановить
+        if (container.getChildCount() == 0) {
+            currentTab = -1;
+            show(TAB_PROJECTS);
+        }
+    }
+
+    private void showWelcome() {
+        String msg = "Добро пожаловать в PixelCode!\n\n"
+                + "1) Выдай доступ ко всем файлам (кнопка ниже) — проекты будут в /sdcard/PixelCode, их увидит Termux.\n"
+                + "2) В Termux один раз выполни:\n"
+                + "   mkdir -p ~/.termux && echo \"allow-external-apps=true\" >> ~/.termux/termux.properties && termux-reload-settings\n"
+                + "3) Вставь API-ключ Mistral в «Настройках» и нажми там «Установить инструменты сборки».\n"
+                + "4) Создай проект и опиши идею в «ИИ-кодер» → «⚡ Файлы» → «🔨 APK».\n\n"
+                + "Доступ к файлам можно выдать и позже: вкладка «Настройки» → «Разрешить доступ ко всем файлам».";
+        new AlertDialog.Builder(this)
+                .setTitle("⚡ PixelCode")
+                .setMessage(msg)
+                .setPositiveButton("Выдать доступ к файлам", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        Ui.openAllFilesSettings(MainActivity.this);
+                    }
+                })
+                .setNegativeButton("Позже", null)
+                .show();
     }
 
     public void show(int tab) {
@@ -113,91 +136,6 @@ public class MainActivity extends Activity {
                 if (f != null) f.setPrefill(t);
             }
         }, 300);
-    }
-
-    private void checkPermissions() {
-        // Доступ ко всем файлам (Android 11+) или WRITE (Android <=9)
-        if (Build.VERSION.SDK_INT >= 30) {
-            if (!isExternalStorageManagerCompat()) {
-                warnStorage();
-            }
-        } else if (Build.VERSION.SDK_INT >= 23) {
-            if (checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                    != PackageManager.PERMISSION_GRANTED) {
-                requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1);
-            }
-        }
-        // Разрешение RUN_COMMAND для Termux (dangerous на новых версиях Termux)
-        if (Build.VERSION.SDK_INT >= 23) {
-            if (checkSelfPermission("com.termux.permission.RUN_COMMAND")
-                    != PackageManager.PERMISSION_GRANTED) {
-                try {
-                    requestPermissions(new String[]{"com.termux.permission.RUN_COMMAND"}, 2);
-                } catch (Throwable ignored) {
-                }
-            }
-        }
-    }
-
-    private boolean isExternalStorageManagerCompat() {
-        if (Build.VERSION.SDK_INT >= 30) {
-            try {
-                Object r = Class.forName("android.os.Environment")
-                        .getMethod("isExternalStorageManager").invoke(null);
-                return Boolean.TRUE.equals(r);
-            } catch (Throwable t) {
-                return true; // не смогли проверить — считаем что ок
-            }
-        }
-        return true;
-    }
-
-    private void warnStorage() {
-        // один раз за запуск
-        if (warnedStorage) return;
-        warnedStorage = true;
-        new AlertDialog.Builder(this)
-                .setTitle("Доступ к файлам")
-                .setMessage("Чтобы проекты лежали в /sdcard/PixelCode (и Termux мог их собирать), "
-                        + "разреши PixelCode доступ ко всем файлам. Без этого проекты будут во "
-                        + "внутреннем каталоге приложения и Termux их не увидит.")
-                .setPositiveButton("Открыть настройки", new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int which) {
-                        try {
-                            startActivity(new Intent(
-                                    "android.settings.MANAGE_APP_ALL_FILES_ACCESS_PERMISSION",
-                                    Uri.parse("package:" + getPackageName())));
-                        } catch (Throwable t) {
-                            try {
-                                startActivity(new Intent("android.settings.MANAGE_ALL_FILES_ACCESS_PERMISSION"));
-                            } catch (Throwable ignored) {
-                            }
-                        }
-                    }
-                })
-                .setNegativeButton("Позже", null)
-                .show();
-    }
-
-    private boolean warnedStorage;
-
-    private void showOnboarding() {
-        String msg = "Добро пожаловать в PixelCode!\n\n"
-                + "Это ИИ-кодер: описываешь идею — нейросеть Mistral пишет код, "
-                + "а APK собирается прямо на телефоне.\n\n"
-                + "Как начать:\n"
-                + "1. Вставь API-ключ Mistral (console.mistral.ai) во вкладке «Настройки».\n"
-                + "2. В Termux разреши внешние приложения:\n"
-                + "   mkdir -p ~/.termux && echo \"allow-external-apps=true\" >> ~/.termux/termux.properties && termux-reload-settings\n"
-                + "3. Нажми «Установить инструменты сборки» в Настройках (или в Termux: pkg install openjdk-17 aapt apksigner zipalign zip ecj dx).\n"
-                + "4. Создай проект во вкладке «Проекты» и опиши идею в «ИИ-кодер».\n"
-                + "5. Кнопка «🔨 APK» отправляет проект на сборку в Termux.\n\n"
-                + "Готовый APK появится в <проект>/build/app.apk — его можно сразу установить.\n";
-        new AlertDialog.Builder(this)
-                .setTitle("⚡ PixelCode")
-                .setMessage(msg)
-                .setPositiveButton("Понятно", null)
-                .show();
     }
 
     @Override

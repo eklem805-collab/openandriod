@@ -78,10 +78,10 @@ public final class Prefs {
     }
 
     public boolean onboarded() {
-        return sp.getBoolean("onboarded", false);
+        return sp.getBoolean("onboarded_v2", false);
     }
 
     public void setOnboarded() {
-        sp.edit().putBoolean("onboarded", true).apply();
+        sp.edit().putBoolean("onboarded_v2", true).apply();
     }
 }
