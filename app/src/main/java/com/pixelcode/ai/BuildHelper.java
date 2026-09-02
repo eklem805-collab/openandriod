@@ -137,6 +137,23 @@ public final class BuildHelper {
         final Prefs prefs = new Prefs(activity);
         prefs.setCurrentProject(project.getName());
 
+        // Проекты должны лежать в /sdcard/PixelCode, иначе Termux их не увидит
+        if (Store.isFallback()) {
+            new AlertDialog.Builder(activity)
+                    .setTitle("⚠ Нет доступа к файлам")
+                    .setMessage("Проекты сейчас лежат во ВНУТРЕННЕМ каталоге приложения — "
+                            + "Termux их не видит, сборка невозможна.\n\n"
+                            + "Выдай PixelCode «Доступ ко всем файлам» и вернись.")
+                    .setPositiveButton("Выдать сейчас", new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int which) {
+                            Ui.openAllFilesSettings(activity);
+                        }
+                    })
+                    .setNegativeButton("Позже", null)
+                    .show();
+            return;
+        }
+
         if (!termuxInstalled(activity)) {
             new AlertDialog.Builder(activity)
                     .setTitle("Termux не найден")
