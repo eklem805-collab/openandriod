@@ -1,7 +1,7 @@
 name: build-apk
 
 # Сборка APK тем же способом, что и на телефоне в Termux (aapt + javac + d8 + apksigner).
-# Запуск: вкладка Actions -> build-apk -> Run workflow, либо: gh workflow run build-apk.yml
+# Запуск: вкладка Actions -> build-apk -> Run workflow, либо пуш (кроме [ci skip]).
 on:
   workflow_dispatch:
   push:
@@ -38,9 +38,27 @@ jobs:
             https://maven.google.com/com/android/tools/r8/8.5.35/r8-8.5.35.jar
 
       - name: Сборка APK
+        continue-on-error: true
         run: |
           export ANDROID_JAR="$HOME/.pixelcode/android.jar"
           bash tools/build-apk.sh "$GITHUB_WORKSPACE"
+
+      - name: Опубликовать результат (лог + apk) в репозиторий
+        if: always()
+        run: |
+          set -e
+          git config user.name "pixelcode-ci"
+          git config user.email "ci@pixelcode.local"
+          mkdir -p apk
+          if [ -f build/app.apk ]; then cp build/app.apk apk/PixelCode.apk; fi
+          if [ -f build/build.log ]; then cp build/build.log apk/build.log; fi
+          git add -f apk || true
+          if git diff --cached --quiet; then
+            echo "нет изменений"
+          else
+            git commit -m "ci: результат сборки [ci skip]" || true
+            git push origin HEAD:${{ github.ref_name }} || echo "push не удался"
+          fi
 
       - name: Артефакт
         if: always()
@@ -50,20 +68,13 @@ jobs:
           path: |
             build/app.apk
             build/build.log
+          if-no-files-found: ignore
 
-      - name: Публикация APK в репозиторий
-        if: success()
+      - name: Итог
         run: |
-          set -e
-          mkdir -p apk
-          cp build/app.apk apk/PixelCode.apk
-          cp build/build.log apk/build.log || true
-          git config user.name "pixelcode-ci"
-          git config user.email "ci@pixelcode.local"
-          git add apk || true
-          if git diff --cached --quiet; then
-            echo "нет изменений"
+          if [ -f build/app.apk ]; then
+            echo "✅ APK собран"
           else
-            git commit -m "ci: свежий PixelCode.apk [ci skip]" || true
-            git push origin HEAD:${{ github.ref_name }} || echo "push не удался (артефакт доступен во вкладке Actions)"
+            echo "❌ APK не собран — смотри apk/build.log в репозитории"
+            exit 1
           fi
