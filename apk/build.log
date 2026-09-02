@@ -1,12 +1,16 @@
 [pixelcode] === Сборка APK: /home/runner/work/openandriod/openandriod ===
-Wed Sep  2 23:33:58 UTC 2026
+Wed Sep  2 23:35:14 UTC 2026
 [pixelcode] манифест: /home/runner/work/openandriod/openandriod/app/src/main/AndroidManifest.xml
 [pixelcode] ресурсы:  /home/runner/work/openandriod/openandriod/app/src/main/res
 [pixelcode] исходники: /home/runner/work/openandriod/openandriod/app/src/main/java
-mkdir: cannot create directory ‘/data’: Permission denied
-mktemp: failed to create directory via template ‘/data/data/com.termux/files/usr/tmp/pixelcode.XXXXXX’: No such file or directory
-mkdir: cannot create directory ‘/gen’: Permission denied
-mkdir: cannot create directory ‘/classes’: Permission denied
 [pixelcode] упаковка ресурсов (aapt2)…
-/res.zip: error: Permission denied.
-[pixelcode] ОШИБКА: aapt2 compile не удался
+[pixelcode] компиляция java…
+Note: Some input files use or override a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+[pixelcode] дексация (d8)…
+[pixelcode] сборка apk…
+[pixelcode] генерирую debug-ключ…
+[pixelcode] подпись…
+[pixelcode] ГОТОВО: /home/runner/work/openandriod/openandriod/build/app.apk (224K)
+[pixelcode] установка: pm install -r /home/runner/work/openandriod/openandriod/build/app.apk
+Wed Sep  2 23:35:19 UTC 2026
