@@ -115,9 +115,15 @@ if [ -z "$D8_BIN" ] && [ -z "$DX_BIN" ]; then
   fi
 fi
 
-TMPDIR="${TMPDIR:-$PREFIX/tmp}"
-mkdir -p "$TMPDIR"
-WORK="$(mktemp -d "$TMPDIR/pixelcode.XXXXXX")"
+# временный каталог: родной TMPDIR → Termux (если реально существует) → /tmp
+if [ -n "${TMPDIR:-}" ] && mkdir -p "$TMPDIR" 2>/dev/null && [ -w "$TMPDIR" ]; then
+  :
+elif [ -w "/data/data/com.termux/files/usr/tmp" ]; then
+  TMPDIR="/data/data/com.termux/files/usr/tmp"
+else
+  TMPDIR="/tmp"
+fi
+WORK="$(mktemp -d "$TMPDIR/pixelcode.XXXXXX")" || die "не удалось создать временный каталог"
 trap 'rm -rf "$WORK"' EXIT
 mkdir -p "$WORK/gen" "$WORK/classes"
 
