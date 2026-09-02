@@ -1,0 +1,15 @@
+# Сборка
+build/
+out/
+.gradle/
+local.properties
+captures/
+.idea/
+*.iml
+# Локальный кэш инструментов
+.pixelcode/
+*.keystore
+android.jar
+r8.jar
+# Временное
+.cache-icon/

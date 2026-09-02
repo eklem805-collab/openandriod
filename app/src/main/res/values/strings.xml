@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">PixelCode</string>
+    <string name="tab_projects">Проекты</string>
+    <string name="tab_files">Файлы</string>
+    <string name="tab_chat">ИИ-кодер</string>
+    <string name="tab_settings">Настройки</string>
+
+    <string name="create_project">+ Создать проект</string>
+    <string name="new_file">+ Новый файл</string>
+    <string name="send">Отправить</string>
+    <string name="stop">Стоп</string>
+    <string name="apply_files">⚡ Файлы</string>
+    <string name="build_apk">🔨 APK</string>
+    <string name="install">Установить</string>
+    <string name="log">Лог</string>
+    <string name="close">Закрыть</string>
+    <string name="save">Сохранить</string>
+
+    <string name="hint_message">Опиши приложение или игру…</string>
+    <string name="hint_api_key">API-ключ Mistral (sk-…)</string>
+    <string name="hint_base_url">https://api.mistral.ai/v1</string>
+    <string name="hint_model_custom">своя модель (если не из списка)</string>
+    <string name="hint_temperature">0.2</string>
+    <string name="hint_font_size">16</string>
+
+    <string name="btn_test_api">Проверить API-ключ</string>
+    <string name="btn_files_perm">Разрешить доступ ко всем файлам</string>
+    <string name="btn_install_perm">Разрешить установку приложений</string>
+    <string name="btn_bootstrap">Установить инструменты сборки (Termux)</string>
+
+    <string name="tpl_game">Игра (космический уклонист)</string>
+    <string name="tpl_app">Приложение (кликер)</string>
+    <string name="tpl_empty">Пустой шаблон</string>
+    <string name="project_name">Имя проекта (латиницей)</string>
+    <string name="fix_with_ai">🤖 Исправить через ИИ</string>
+    <string name="copy_rish">📋 Скопировать rish-команду (Shizuku)</string>
+</resources>

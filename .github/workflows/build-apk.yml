@@ -1,0 +1,66 @@
+name: build-apk
+
+# Сборка APK тем же способом, что и на телефоне в Termux (aapt + javac + d8 + apksigner).
+# Запуск: вкладка Actions -> build-apk -> Run workflow, либо: gh workflow run build-apk.yml
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Инструменты (aapt, zipalign, apksigner, zip)
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends aapt zipalign apksigner zip
+
+      - name: android.jar (API 34) и r8
+        run: |
+          mkdir -p "$HOME/.pixelcode"
+          curl -fL --retry 3 -o "$HOME/.pixelcode/android.jar" \
+            https://raw.githubusercontent.com/Sable/android-platforms/master/android-34/android.jar
+          curl -fL --retry 3 -o "$HOME/.pixelcode/r8.jar" \
+            https://maven.google.com/com/android/tools/r8/8.5.35/r8-8.5.35.jar
+
+      - name: Сборка APK
+        run: |
+          export ANDROID_JAR="$HOME/.pixelcode/android.jar"
+          bash tools/build-apk.sh "$GITHUB_WORKSPACE"
+
+      - name: Артефакт
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: PixelCode-apk
+          path: |
+            build/app.apk
+            build/build.log
+
+      - name: Публикация APK в репозиторий
+        if: success()
+        run: |
+          set -e
+          mkdir -p apk
+          cp build/app.apk apk/PixelCode.apk
+          cp build/build.log apk/build.log || true
+          git config user.name "pixelcode-ci"
+          git config user.email "ci@pixelcode.local"
+          git add apk || true
+          if git diff --cached --quiet; then
+            echo "нет изменений"
+          else
+            git commit -m "ci: свежий PixelCode.apk [ci skip]" || true
+            git push origin HEAD:${{ github.ref_name }} || echo "push не удался (артефакт доступен во вкладке Actions)"
+          fi

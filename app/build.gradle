@@ -1,0 +1,28 @@
+apply plugin: 'com.android.application'
+
+android {
+    // ВАЖНО: пакет задаётся в AndroidManifest.xml (также используется сборкой без gradle)
+    compileSdk 34
+
+    defaultConfig {
+        minSdkVersion 21
+        targetSdkVersion 34
+        versionCode 1
+        versionName "1.0"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+}
+
+// Зависимостей нет принципиально: проект собирается и без gradle (tools/build-apk.sh).
+dependencies {
+}
