@@ -38,6 +38,17 @@
             android:textSize="11sp"
             android:layout_marginLeft="6dp"
             android:text="@string/build_apk"/>
+
+        <Button
+            android:id="@+id/btn_continue"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_btn"
+            android:textColor="@color/ok"
+            android:textSize="11sp"
+            android:layout_marginLeft="6dp"
+            android:visibility="gone"
+            android:text="@string/btn_continue"/>
     </LinearLayout>
 
     <ListView

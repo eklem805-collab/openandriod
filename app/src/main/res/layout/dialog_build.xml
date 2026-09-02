@@ -1,60 +1,101 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:padding="14dp">
+    android:layout_height="wrap_content">
 
-    <TextView
-        android:id="@+id/status"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:textSize="14sp"
-        android:paddingBottom="6dp"
-        android:textColor="@color/accent"/>
+        android:orientation="vertical"
+        android:padding="14dp">
 
-    <TextView
-        android:id="@+id/apkpath"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:textSize="11sp"
-        android:paddingBottom="12dp"
-        android:textColor="@color/text_dim"/>
+        <TextView
+            android:id="@+id/status"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="14sp"
+            android:paddingBottom="6dp"
+            android:textColor="@color/accent"/>
 
-    <Button
-        android:id="@+id/btn_log"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@drawable/bg_btn"
-        android:textColor="@color/text"
-        android:layout_marginBottom="6dp"
-        android:text="@string/log"/>
+        <TextView
+            android:id="@+id/apkpath"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="11sp"
+            android:paddingBottom="6dp"
+            android:textColor="@color/text_dim"/>
 
-    <Button
-        android:id="@+id/btn_install"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@drawable/bg_btn_accent"
-        android:textColor="@color/text"
-        android:layout_marginBottom="6dp"
-        android:enabled="false"
-        android:text="@string/install"/>
+        <TextView
+            android:id="@+id/errorview"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="11sp"
+            android:paddingBottom="10dp"
+            android:textColor="@color/danger"
+            android:typeface="monospace"
+            android:visibility="gone"/>
 
-    <Button
-        android:id="@+id/btn_fix"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@drawable/bg_btn"
-        android:textColor="@color/text"
-        android:layout_marginBottom="6dp"
-        android:text="@string/fix_with_ai"/>
+        <Button
+            android:id="@+id/btn_run"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_btn_accent"
+            android:textColor="@color/text"
+            android:layout_marginBottom="6dp"
+            android:text="@string/btn_run_build"/>
 
-    <Button
-        android:id="@+id/btn_rish"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@drawable/bg_btn"
-        android:textColor="@color/text"
-        android:layout_marginBottom="6dp"
-        android:text="@string/copy_rish"/>
-</LinearLayout>
+        <Button
+            android:id="@+id/btn_install"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_btn_accent"
+            android:textColor="@color/text"
+            android:layout_marginBottom="6dp"
+            android:enabled="false"
+            android:text="@string/install"/>
+
+        <Button
+            android:id="@+id/btn_log"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_btn"
+            android:textColor="@color/text"
+            android:layout_marginBottom="6dp"
+            android:text="@string/log"/>
+
+        <Button
+            android:id="@+id/btn_fix"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_btn"
+            android:textColor="@color/text"
+            android:layout_marginBottom="6dp"
+            android:text="@string/fix_with_ai"/>
+
+        <Button
+            android:id="@+id/btn_manual"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_btn"
+            android:textColor="@color/text"
+            android:layout_marginBottom="6dp"
+            android:text="@string/btn_manual_cmd"/>
+
+        <Button
+            android:id="@+id/btn_rish"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_btn"
+            android:textColor="@color/text"
+            android:layout_marginBottom="6dp"
+            android:text="@string/copy_rish"/>
+
+        <Button
+            android:id="@+id/btn_help"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_btn"
+            android:textColor="@color/text_dim"
+            android:text="@string/btn_checklist"/>
+    </LinearLayout>
+</ScrollView>

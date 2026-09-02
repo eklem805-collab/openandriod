@@ -99,6 +99,11 @@ public class ProjectsFragment extends Fragment {
                             Ui.toast(activity, "Имя пустое");
                             return;
                         }
+                        String clean = n.replaceAll("[^a-zA-Z0-9_-]", "_");
+                        if (!clean.equals(n)) {
+                            Ui.toast(activity, "Пробелы заменены: " + clean);
+                            n = clean;
+                        }
                         int type = Templates.GAME;
                         if (rg.getCheckedRadioButtonId() == 1001) type = Templates.APP;
                         if (rg.getCheckedRadioButtonId() == 1002) type = Templates.EMPTY;

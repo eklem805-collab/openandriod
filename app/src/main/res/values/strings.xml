@@ -35,4 +35,9 @@
     <string name="project_name">Имя проекта (латиницей)</string>
     <string name="fix_with_ai">🤖 Исправить через ИИ</string>
     <string name="copy_rish">📋 Скопировать rish-команду (Shizuku)</string>
+    <string name="btn_continue">⏵ Продолжить</string>
+    <string name="btn_run_build">▶ Запустить сборку</string>
+    <string name="btn_manual_cmd">📋 Ручная команда сборки</string>
+    <string name="btn_checklist">❓ Чек-лист сборки</string>
+    <string name="btn_grant_termux">Выдать права Termux</string>
 </resources>

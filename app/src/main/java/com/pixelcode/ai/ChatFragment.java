@@ -34,6 +34,7 @@ public class ChatFragment extends Fragment {
     private EditText input;
     private Button btnSend;
     private Button btnStop;
+    private Button btnContinue;
     private TextView projectLabel;
     private Mistral mistral;
     private final Handler handler = new Handler();
@@ -58,6 +59,7 @@ public class ChatFragment extends Fragment {
         projectLabel = (TextView) root.findViewById(R.id.project);
         Button btnApply = (Button) root.findViewById(R.id.btn_apply);
         Button btnBuild = (Button) root.findViewById(R.id.btn_build);
+        btnContinue = (Button) root.findViewById(R.id.btn_continue);
 
         adapter = new MessageAdapter();
         list.setAdapter(adapter);
@@ -85,6 +87,12 @@ public class ChatFragment extends Fragment {
                     return;
                 }
                 BuildHelper.showBuildDialog(activity, p);
+            }
+        });
+        btnContinue.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                sendText("Продолжай ровно с того места, где оборвался предыдущий ответ. "
+                        + "Не повторяй уже выведённое. Выведи оставшиеся файлы ПОЛНОСТЬЮ в формате ###FILE:.");
             }
         });
         input.setOnEditorActionListener(new TextView.OnEditorActionListener() {
@@ -147,9 +155,12 @@ public class ChatFragment extends Fragment {
         if (msgs.size() == 0) {
             Mistral.Msg hello = new Mistral.Msg("assistant",
                     "Привет! Я — ИИ-кодер PixelCode на базе Mistral.\n\n"
-                            + "Создай проект во вкладке «Проекты» и опиши, что сделать: "
-                            + "например «сделай арканоид с фиолетовой пиксельной графикой и таблицей рекордов».\n\n"
-                            + "Я напишу файлы — жми «⚡ Файлы», чтобы записать их в проект, потом «🔨 APK» для сборки.");
+                            + "Как это работает:\n"
+                            + "• При создании проекта кладётся ПРОСТОЙ ШАБЛОН-заготовка (не мой ответ!).\n"
+                            + "• Чтобы получить свою игру, опиши её здесь ПОДРОБНО — я перепишу файлы.\n"
+                            + "  Например: «сделай аналог песочницы с физикой: рэгдоллы, оружие, разрушаемые объекты, кровь-частицы, спавн предметов по кнопке».\n"
+                            + "• Потом жми «⚡ Файлы» (записать) → «🔨 APK» (собрать).\n\n"
+                            + "Большие игры пишутся 1–3 минуты — не 3 секунды. Если ответ оборвался — жми «⏵ Продолжить».");
             msgs.add(hello);
         }
         adapter.notifyDataSetChanged();
@@ -168,23 +179,32 @@ public class ChatFragment extends Fragment {
     private void send() {
         String text = input.getText().toString().trim();
         if (text.length() == 0) return;
+        input.setText("");
+        sendText(text);
+    }
+
+    private void sendText(String text) {
+        if (text == null || text.trim().length() == 0) return;
         File project = Store.currentProject(activity);
         if (project == null) {
             Ui.toast(activity, "Сначала создай проект во вкладке «Проекты»");
             return;
         }
         final File fProject = project;
-        input.setText("");
         input.setEnabled(false);
         btnSend.setVisibility(View.GONE);
+        btnContinue.setVisibility(View.GONE);
         btnStop.setVisibility(View.VISIBLE);
 
         List<Mistral.Msg> request = new ArrayList<Mistral.Msg>();
         request.add(new Mistral.Msg("system", Prompts.SYSTEM));
         request.add(new Mistral.Msg("system", Prompts.context(fProject)));
-        // последние 12 сообщений как контекст
+        // последние 12 сообщений как контекст, длинные — урезаем (иначе API отвечает ошибкой)
         int from = Math.max(1, msgs.size() - 12); // 0 — приветствие
-        for (int i = from; i < msgs.size(); i++) request.add(msgs.get(i));
+        for (int i = from; i < msgs.size(); i++) {
+            Mistral.Msg m = msgs.get(i);
+            request.add(new Mistral.Msg(m.role, clip(m.content, 6000)));
+        }
         request.add(new Mistral.Msg("user", text));
         msgs.add(new Mistral.Msg("user", text));
         msgs.add(new Mistral.Msg("assistant", ""));
@@ -238,10 +258,20 @@ public class ChatFragment extends Fragment {
         input.setEnabled(true);
         btnStop.setVisibility(View.GONE);
         btnSend.setVisibility(View.VISIBLE);
+        btnContinue.setVisibility(View.VISIBLE);
         refreshProjectLabel();
         if (FilesApplier.hasFiles(lastAssistant())) {
             Ui.toast(activity, "ИИ прислал файлы — жми «⚡ Файлы» чтобы записать");
         }
+    }
+
+    /** Урезает слишком длинные сообщения истории: начало + метка + конец. */
+    private static String clip(String s, int max) {
+        if (s == null || s.length() <= max) return s == null ? "" : s;
+        int head = Math.min(1500, max / 3);
+        int tail = max - head;
+        return s.substring(0, head) + "\n…[пропущено " + (s.length() - max) + " симв.]…\n"
+                + s.substring(s.length() - tail);
     }
 
     private void stop() {

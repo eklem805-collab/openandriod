@@ -44,14 +44,14 @@ for c in "$PROJ/app/src/main/assets" "$PROJ/assets"; do
   [ -d "$c" ] && { ASSETS="$c"; break; }
 done
 
-SRCDIRS=""
+SRCDIRS=()
 for c in "$PROJ/app/src/main/java" "$PROJ/src" "$PROJ/java"; do
-  [ -d "$c" ] && SRCDIRS="$SRCDIRS $c"
+  [ -d "$c" ] && SRCDIRS+=("$c")
 done
-[ -z "$SRCDIRS" ] && die "не найден каталог с java-исходниками"
+[ ${#SRCDIRS[@]} -eq 0 ] && die "не найден каталог с java-исходниками"
 say "манифест: $MANIFEST"
 say "ресурсы:  ${RES:-<нет>}"
-say "исходники:$SRCDIRS"
+say "исходники: ${SRCDIRS[*]}"
 
 # ---------- 2. Инструменты ----------
 PREFIX="${PREFIX:-/data/data/com.termux/files/usr}"
@@ -84,6 +84,8 @@ ZIPALIGN_BIN="$(command -v zipalign || true)"
 command -v apksigner >/dev/null 2>&1 || die "нет apksigner. Выполни: pkg install apksigner"
 command -v keytool   >/dev/null 2>&1 || die "нет keytool. Выполни: pkg install openjdk-17"
 command -v zip       >/dev/null 2>&1 || die "нет zip. Выполни: pkg install zip"
+FIND_BIN="$(command -v find || true)"
+[ -z "$FIND_BIN" ] && die "нет find. Выполни: pkg install findutils"
 
 # android.jar (SDK-фреймворк для компиляции)
 ANDROID_JAR="${ANDROID_JAR:-$CACHE/android.jar}"
@@ -113,7 +115,9 @@ if [ -z "$D8_BIN" ] && [ -z "$DX_BIN" ]; then
   fi
 fi
 
-WORK="$(mktemp -d "${TMPDIR:-/tmp}/pixelcode.XXXXXX")"
+TMPDIR="${TMPDIR:-$PREFIX/tmp}"
+mkdir -p "$TMPDIR"
+WORK="$(mktemp -d "$TMPDIR/pixelcode.XXXXXX")"
 trap 'rm -rf "$WORK"' EXIT
 mkdir -p "$WORK/gen" "$WORK/classes"
 
@@ -139,7 +143,7 @@ fi
 
 # ---------- 4. Компиляция Java ----------
 say "компиляция java…"
-find $SRCDIRS "$WORK/gen" -name "*.java" -type f > "$WORK/sources.list"
+"$FIND_BIN" "${SRCDIRS[@]}" "$WORK/gen" -name "*.java" -type f > "$WORK/sources.list"
 [ -s "$WORK/sources.list" ] || die "java-файлы не найдены"
 if [ -n "$ECJ_JAR" ]; then
   java -jar "$ECJ_JAR" -1.8 -encoding UTF-8 -nowarn \

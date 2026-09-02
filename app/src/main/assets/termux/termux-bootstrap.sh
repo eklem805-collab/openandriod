@@ -20,9 +20,9 @@ say "установка инструментов (java, aapt, apksigner, zip)…
 # openjdk-17 нужен для javac/keytool; ecj и dx — запасные компилятор/дексер
 ok=0
 for set in \
-  "openjdk-17 aapt apksigner zip" \
-  "aapt apksigner zip ecj openjdk-17" \
-  "aapt apksigner zip ecj dx" ; do
+  "openjdk-17 aapt apksigner zip findutils curl" \
+  "aapt apksigner zip findutils curl ecj openjdk-17" \
+  "aapt apksigner zip findutils curl ecj dx" ; do
   say "  пробую: pkg install $set"
   if pkg install -y $set; then ok=1; break; fi
 done

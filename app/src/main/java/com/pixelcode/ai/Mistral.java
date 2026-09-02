@@ -149,9 +149,12 @@ public final class Mistral {
             if (cancelled) {
                 listener.onDone(sb.toString(), "остановлено");
             } else if (sb.length() > 0) {
-                listener.onDone(sb.toString(), null);
+                // ОБРЫВ СОЕДИНЕНИЯ — раньше молча выдавал неполный ответ за «успех»
+                listener.onDone(sb.toString(), "соединение оборвалось — ответ НЕПОЛНЫЙ ("
+                        + sb.length() + " симв.). Нажми «⏵ Продолжить»");
             } else {
-                listener.onDone("", "Сеть: " + e.getMessage());
+                listener.onDone("", "Сеть: " + e.getMessage()
+                        + (apiKey.length() == 0 ? " · и не задан API-ключ!" : ""));
             }
         } catch (Throwable t) {
             listener.onDone(sb.toString(), t.getClass().getSimpleName() + ": " + t.getMessage());

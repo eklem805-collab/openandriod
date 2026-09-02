@@ -2,19 +2,18 @@ package com.pixelcode.ai;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageInstaller;
 import android.content.pm.PackageManager;
-import android.os.Bundle;
 import android.os.Handler;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -28,6 +27,7 @@ public final class BuildHelper {
     public static final String TERMUX_PKG = "com.termux";
     public static final String TERMUX_SERVICE = "com.termux.app.RunCommandService";
     public static final String RUN_CMD_ACTION = "com.termux.RUN_COMMAND";
+    public static final String RUN_CMD_PERM = "com.termux.permission.RUN_COMMAND";
     public static final String TERMUX_BASH = "/data/data/com.termux/files/usr/bin/bash";
 
     private BuildHelper() {
@@ -40,6 +40,15 @@ public final class BuildHelper {
             PackageManager pm = ctx.getPackageManager();
             PackageInfo pi = pm.getPackageInfo(TERMUX_PKG, 0);
             return pi != null;
+        } catch (Throwable t) {
+            return false;
+        }
+    }
+
+    public static boolean hasRunCommandPerm(Context ctx) {
+        try {
+            return ctx.checkPermission(RUN_CMD_PERM, android.os.Process.myPid(),
+                    android.os.Process.myUid()) == PackageManager.PERMISSION_GRANTED;
         } catch (Throwable t) {
             return false;
         }
@@ -67,23 +76,48 @@ public final class BuildHelper {
         }
     }
 
+    /** Диалог выдачи прав Termux: системный запрос + rish-команда (Shizuku). */
+    public static void showGrantTermuxDialog(final Activity activity) {
+        String msg = "Чтобы PixelCode мог запускать сборку в Termux, нужно один раз выдать разрешение.\n\n"
+                + "Способ 1 — системный диалог:\nнажми «Выдать сейчас» и подтверди.\n\n"
+                + "Способ 2 — надёжно, через твой Shizuku (выполни в Termux):\n"
+                + "rish -c 'pm grant com.pixelcode.ai com.termux.permission.RUN_COMMAND'\n\n"
+                + "И проверь, что в ~/.termux/termux.properties есть строка\n"
+                + "allow-external-apps=true\n"
+                + "(иначе Termux будет молча игнорировать команды).";
+        new AlertDialog.Builder(activity)
+                .setTitle("Права для Termux")
+                .setMessage(msg)
+                .setPositiveButton("Выдать сейчас", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        try {
+                            activity.requestPermissions(new String[]{RUN_CMD_PERM}, 7);
+                        } catch (Throwable t) {
+                            Ui.toast(activity, "Система не показала диалог — используй rish-команду");
+                        }
+                    }
+                })
+                .setNeutralButton("📋 rish-команда", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        copy(activity, "rish -c 'pm grant com.pixelcode.ai com.termux.permission.RUN_COMMAND'");
+                        Ui.toast(activity, "Скопировано. Вставь в Termux и выполни (нужен запущенный Shizuku)");
+                    }
+                })
+                .setNegativeButton("Позже", null)
+                .show();
+    }
+
+    private static void copy(Activity a, String cmd) {
+        try {
+            ClipboardManager cm = (ClipboardManager) a.getSystemService(Context.CLIPBOARD_SERVICE);
+            android.content.ClipData cd = android.content.ClipData.newPlainText("cmd", cmd);
+            cm.setPrimaryClip(cd);
+        } catch (Throwable ignored) {
+        }
+    }
+
     /** Отправляет скрипт в Termux (нужны permission + allow-external-apps). */
     public static void runInTermux(Context ctx, String scriptPath, String args, String workdir) {
-        // Разрешение RUN_COMMAND запрашиваем только здесь, в момент сборки —
-        // не на старте приложения (каскад системных диалогов ломал ввод).
-        if (android.os.Build.VERSION.SDK_INT >= 23
-                && ctx.checkSelfPermission("com.termux.permission.RUN_COMMAND")
-                != android.content.pm.PackageManager.PERMISSION_GRANTED) {
-            Ui.toast(ctx, "Выдай разрешение «отправлять команды в Termux» и нажми кнопку снова");
-            if (ctx instanceof Activity) {
-                try {
-                    ((Activity) ctx).requestPermissions(
-                            new String[]{"com.termux.permission.RUN_COMMAND"}, 7);
-                } catch (Throwable ignored) {
-                }
-            }
-            return;
-        }
         Intent it = new Intent(RUN_CMD_ACTION);
         it.setClassName(TERMUX_PKG, TERMUX_SERVICE);
         it.putExtra("com.termux.RUN_COMMAND_PATH", TERMUX_BASH);
@@ -98,7 +132,7 @@ public final class BuildHelper {
         }
     }
 
-    /** Диалог сборки: запуск + поллинг статуса + установка. */
+    /** Диалог сборки: запуск + поллинг статуса + установка + помощь. */
     public static void showBuildDialog(final Activity activity, final File project) {
         final Prefs prefs = new Prefs(activity);
         prefs.setCurrentProject(project.getName());
@@ -121,10 +155,9 @@ public final class BuildHelper {
         }
 
         File tools = new File(Store.root(activity), "tools");
-        String script = new File(tools, "build-apk.sh").getAbsolutePath();
-        File buildDir = new File(project, "build");
+        final String script = new File(tools, "build-apk.sh").getAbsolutePath();
+        final File buildDir = new File(project, "build");
         final File status = new File(buildDir, "status.txt");
-        // сброс статуса
         try {
             buildDir.mkdirs();
             Store.write(status, "reset\n");
@@ -133,24 +166,20 @@ public final class BuildHelper {
         final File apk = new File(buildDir, "app.apk");
         final File logFile = new File(buildDir, "build.log");
 
-        runInTermux(activity, script, project.getAbsolutePath(), Store.root(activity).getAbsolutePath());
-
+        // --- интерфейс диалога
         View v = LayoutInflater.from(activity).inflate(R.layout.dialog_build, null);
         Ui.applyAll(v);
         final TextView statusView = (TextView) v.findViewById(R.id.status);
         final TextView apkPath = (TextView) v.findViewById(R.id.apkpath);
+        final TextView errorView = (TextView) v.findViewById(R.id.errorview);
         final Button btnInstall = (Button) v.findViewById(R.id.btn_install);
         final Button btnLog = (Button) v.findViewById(R.id.btn_log);
         final Button btnFix = (Button) v.findViewById(R.id.btn_fix);
         final Button btnRish = (Button) v.findViewById(R.id.btn_rish);
+        final Button btnRun = (Button) v.findViewById(R.id.btn_run);
+        final Button btnManual = (Button) v.findViewById(R.id.btn_manual);
+        final Button btnHelp = (Button) v.findViewById(R.id.btn_help);
         apkPath.setText(apk.getAbsolutePath());
-
-        final AlertDialog[] dlg = new AlertDialog[1];
-        dlg[0] = new AlertDialog.Builder(activity)
-                .setTitle("🔨 Сборка APK — " + project.getName())
-                .setView(v)
-                .setPositiveButton(R.string.close, null)
-                .show();
 
         final Handler h = new Handler();
         final Runnable poll = new Runnable() {
@@ -164,12 +193,16 @@ public final class BuildHelper {
                 if (ok) {
                     statusView.setText("✅ ГОТОВО — APK собран");
                     statusView.setTextColor(Ui.C_OK);
+                    errorView.setVisibility(View.GONE);
                     btnInstall.setEnabled(true);
-                    return; // больше не опрашиваем
+                    return;
                 }
                 if (error) {
-                    statusView.setText("❌ Ошибка сборки (см. Лог / Исправить через ИИ)");
+                    statusView.setText("❌ Ошибка сборки");
                     statusView.setTextColor(Ui.C_DANGER);
+                    String tail = lastLines(Store.readTail(logFile, 4000), 8);
+                    errorView.setVisibility(View.VISIBLE);
+                    errorView.setText(tail.length() == 0 ? "(лог пуст — сборка не запускалась)" : tail);
                     return;
                 }
                 statusView.setText("⏳ Сборка идёт в Termux… (" + ticks * 2 + " c)");
@@ -177,8 +210,37 @@ public final class BuildHelper {
                 if (ticks < 900) h.postDelayed(this, 2000);
             }
         };
-        h.postDelayed(poll, 2000);
 
+        final Runnable[] start = new Runnable[1];
+        start[0] = new Runnable() {
+            public void run() {
+                if (!hasRunCommandPerm(activity)) {
+                    statusView.setText("⚠ Нет прав на команды Termux");
+                    statusView.setTextColor(Ui.C_DANGER);
+                    showGrantTermuxDialog(activity);
+                    return;
+                }
+                errorView.setVisibility(View.GONE);
+                statusView.setText("⏳ Запуск сборки в Termux…");
+                h.removeCallbacks(poll);
+                h.postDelayed(poll, 2000);
+                runInTermux(activity, script, project.getAbsolutePath(),
+                        Store.root(activity).getAbsolutePath());
+            }
+        };
+
+        final AlertDialog[] dlg = new AlertDialog[1];
+        dlg[0] = new AlertDialog.Builder(activity)
+                .setTitle("🔨 Сборка APK — " + project.getName())
+                .setView(v)
+                .setPositiveButton(R.string.close, null)
+                .show();
+
+        btnRun.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                start[0].run();
+            }
+        });
         btnInstall.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 installApk(activity, apk);
@@ -203,14 +265,61 @@ public final class BuildHelper {
         });
         btnRish.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                String cmd = "pm install -r " + apk.getAbsolutePath();
-                android.content.ClipboardManager cm = (android.content.ClipboardManager)
-                        activity.getSystemService(Context.CLIPBOARD_SERVICE);
-                cm.setText(cmd);
-                Ui.toast(activity, "Скопировано: " + cmd
-                        + "\nВыполни через rish (Shizuku)");
+                copy(activity, "pm install -r " + apk.getAbsolutePath());
+                Ui.toast(activity, "Скопировано: pm install — выполни через rish (Shizuku)");
             }
         });
+        btnManual.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                copy(activity, "bash " + script + " " + project.getAbsolutePath());
+                new AlertDialog.Builder(activity)
+                        .setTitle("Ручная сборка (всегда работает)")
+                        .setMessage("Команда скопирована в буфер:\n\n"
+                                + "bash " + script + " " + project.getAbsolutePath() + "\n\n"
+                                + "Вариант 1: открой Termux, вставь и выполни.\n"
+                                + "Вариант 2 (Shizuku, без всяких прав):\n"
+                                + "rish -c 'bash " + script + " " + project.getAbsolutePath() + "'")
+                        .setPositiveButton("ок", null)
+                        .show();
+            }
+        });
+        btnHelp.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                new AlertDialog.Builder(activity)
+                        .setTitle("Чек-лист сборки")
+                        .setMessage("1) Termux установлен (F-Droid/GitHub) и открыт хотя бы раз.\n\n"
+                                + "2) В Termux есть строка allow-external-apps=true\n"
+                                + "в файле ~/.termux/termux.properties, потом выполнено\n"
+                                + "termux-reload-settings\n\n"
+                                + "3) Выдано разрешение com.termux.permission.RUN_COMMAND:\n"
+                                + "rish -c 'pm grant com.pixelcode.ai com.termux.permission.RUN_COMMAND'\n"
+                                + "(или системный диалог кнопкой «▶ Запустить сборку»).\n\n"
+                                + "4) Инструменты стоят: в Настройках — «Установить инструменты сборки».\n"
+                                + "Первая сборка качает android.jar (~26 МБ).\n\n"
+                                + "5) Не помогло? «📋 Ручная команда сборки» работает всегда.\n"
+                                + "Лог: «Лог» → пришли последние строки разработчику.")
+                        .setPositiveButton("ок", null)
+                        .show();
+            }
+        });
+
+        // автозапуск, если права уже есть
+        start[0].run();
+    }
+
+    /** Последние N непустых строк текста. */
+    static String lastLines(String s, int n) {
+        if (s == null) return "";
+        String[] parts = s.split("\n");
+        StringBuilder sb = new StringBuilder();
+        int count = 0;
+        for (int i = parts.length - 1; i >= 0 && count < n; i--) {
+            String t = parts[i].trim();
+            if (t.length() == 0) continue;
+            sb.insert(0, t + '\n');
+            count++;
+        }
+        return sb.toString();
     }
 
     /** Быстрая сборка без диалога (для настроек/бутстрапа). */
@@ -279,11 +388,13 @@ public final class BuildHelper {
         int status = data.getIntExtra(PackageInstaller.EXTRA_STATUS, PackageInstaller.STATUS_FAILURE);
         String msg = data.getStringExtra(PackageInstaller.EXTRA_STATUS_MESSAGE);
         if (status == PackageInstaller.STATUS_SUCCESS) {
-            Toast.makeText(ctx, "✅ Установлено! Запусти из меню приложений.", Toast.LENGTH_LONG).show();
+            android.widget.Toast.makeText(ctx, "✅ Установлено! Запусти из меню приложений.",
+                    android.widget.Toast.LENGTH_LONG).show();
         } else if (status == PackageInstaller.STATUS_FAILURE_ABORTED) {
-            Toast.makeText(ctx, "Установка отменена", Toast.LENGTH_SHORT).show();
+            android.widget.Toast.makeText(ctx, "Установка отменена", android.widget.Toast.LENGTH_SHORT).show();
         } else {
-            Toast.makeText(ctx, "Ошибка установки: " + msg, Toast.LENGTH_LONG).show();
+            android.widget.Toast.makeText(ctx, "Ошибка установки: " + msg,
+                    android.widget.Toast.LENGTH_LONG).show();
         }
     }
 }
